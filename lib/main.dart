@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/login_screen.dart';
+import 'presentation/screens/signup_screen.dart';
+import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +18,14 @@ class MyApp extends StatelessWidget {
       title: 'Recetas App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LoginScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/profile': (context) => const ProfileScreen(),
+      },
     );
   }
 }

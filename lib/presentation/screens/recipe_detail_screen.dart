@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/api_service.dart';
+import 'edit_recipe_screen.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final String recetaId;
@@ -12,7 +13,9 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  final ApiService _apiService = ApiService();
   late Future<Map<String, dynamic>> _recetaFuture;
+  String? _currentUserId;
 
   // Helpers to read API fields that may have different names
   String _getStringFieldFrom(
@@ -38,10 +41,31 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return <dynamic>[];
   }
 
+  String _getRecipeId(Map<String, dynamic> receta) {
+    return (receta['id'] ??
+                receta['_id'] ??
+                receta['recetaId'] ??
+                receta['receta_id'])
+            ?.toString() ??
+        '';
+  }
+
+  String _getUserId(Map<String, dynamic> receta) {
+    return (receta['userId'] ?? receta['user_id'] ?? receta['usuario_id'])
+            ?.toString() ??
+        '';
+  }
+
   @override
   void initState() {
     super.initState();
-    _recetaFuture = ApiService().obtenerRecetaPorId(widget.recetaId);
+    _recetaFuture = _apiService.obtenerRecetaPorId(widget.recetaId);
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    _currentUserId = await _apiService.getCurrentUserId();
+    setState(() {}); // Actualiza la UI cuando el ID del usuario está disponible
   }
 
   @override
@@ -83,6 +107,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 floating: false,
                 pinned: true,
                 backgroundColor: AppColors.primary,
+                actions: _buildAppBarActions(receta),
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
@@ -317,5 +342,135 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         }),
       ],
     );
+  }
+
+  List<Widget> _buildAppBarActions(Map<String, dynamic> receta) {
+    if (_currentUserId == null) return [];
+
+    final recetaUserId = _getUserId(receta);
+
+    // Solo mostrar botones si el usuario actual es el dueño de la receta
+    if (recetaUserId == _currentUserId) {
+      return [
+        IconButton(
+          icon: const Icon(Icons.edit),
+          onPressed: () => _navigateToEditRecipe(receta),
+          tooltip: 'Editar receta',
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: () =>
+              _mostrarDialogoEliminar(context, _getRecipeId(receta)),
+          tooltip: 'Eliminar receta',
+        ),
+      ];
+    }
+
+    return [];
+  }
+
+  void _navigateToEditRecipe(Map<String, dynamic> receta) async {
+    print('🔧 [RECIPE_DETAIL] Navegando a pantalla de edición');
+    print('🔧 [RECIPE_DETAIL] Datos de receta: ${receta.keys.toList()}');
+    
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => EditRecipeScreen(receta: receta)),
+    );
+
+    print('🔧 [RECIPE_DETAIL] Resultado de edición: $result');
+
+    // Si se actualizó la receta, recargar los datos
+    if (result == true) {
+      print('🔧 [RECIPE_DETAIL] Receta actualizada, recargando datos...');
+      setState(() {
+        _recetaFuture = _apiService.obtenerRecetaPorId(widget.recetaId);
+      });
+    }
+  }
+
+  void _mostrarDialogoEliminar(BuildContext context, String recetaId) {
+    print('🗑️ [RECIPE_DETAIL] Iniciando proceso de eliminación');
+    print('🗑️ [RECIPE_DETAIL] ID de receta: $recetaId');
+    
+    if (recetaId.trim().isEmpty) {
+      print('❌ [RECIPE_DETAIL] ID de receta vacío o inválido');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ID de receta inválido')));
+      return;
+    }
+
+    print('🗑️ [RECIPE_DETAIL] Mostrando diálogo de confirmación');
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: const Text('Confirmar Eliminación'),
+          content: const Text(
+            '¿Estás seguro de que quieres eliminar esta receta? Esta acción no se puede deshacer.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Eliminar'),
+              onPressed: () async {
+                print('🗑️ [RECIPE_DETAIL] Usuario confirmó eliminación');
+                Navigator.of(ctx).pop(); // Cerrar diálogo
+                await _eliminarReceta(recetaId);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _eliminarReceta(String recetaId) async {
+    try {
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Eliminando receta...'),
+            ],
+          ),
+        ),
+      );
+
+      await _apiService.eliminarReceta(recetaId);
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Cerrar indicador de carga
+        Navigator.of(context).pop(); // Volver a la pantalla anterior
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Receta eliminada con éxito'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Cerrar indicador de carga
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar la receta: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

@@ -14,14 +14,37 @@ class ApiService {
     await prefs.setString('recetas_token', token);
   }
 
+  Future<void> _guardarDatosUsuario(
+    String token,
+    String userId,
+    String userName,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('recetas_token', token);
+    await prefs.setString('user_id', userId);
+    await prefs.setString('user_name', userName);
+  }
+
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('recetas_token');
   }
 
+  Future<String?> getCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_id');
+  }
+
+  Future<String?> getCurrentUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_name');
+  }
+
   Future<void> cerrarSesion() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('recetas_token');
+    await prefs.remove('user_id');
+    await prefs.remove('user_name');
   }
 
   Future<Map<String, String>> _getHeaders() async {
@@ -104,7 +127,16 @@ class ApiService {
 
       if (data['session']?['access_token'] != null) {
         print('✅ [API] Token recibido y guardado');
-        await _guardarToken(data['session']['access_token']);
+        final session = data['session'];
+        final user = session['user'];
+        // Guardar token, ID y nombre del usuario
+        await _guardarDatosUsuario(
+          session['access_token'],
+          user['id']?.toString() ?? '',
+          user['user_metadata']?['name']?.toString() ??
+              user['email']?.toString() ??
+              'Usuario',
+        );
       } else {
         print('⚠️ [API] No se recibió token en la respuesta');
       }
@@ -239,15 +271,106 @@ class ApiService {
     return data;
   }
 
+  /// Endpoint: PUT /recetas/:id
+  Future<Map<String, dynamic>> actualizarReceta(
+    String recetaId,
+    Map<String, dynamic> datosReceta,
+  ) async {
+    print('✏️ [API] Actualizando receta ID: $recetaId');
+    print('✏️ [API] URL: $_baseUrl/recetas/$recetaId');
+    print('✏️ [API] Datos: $datosReceta');
+
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/recetas/$recetaId'),
+        headers: await _getHeaders(),
+        body: jsonEncode(datosReceta),
+      );
+
+      print('✏️ [API] Actualizar - Status: ${response.statusCode}');
+      print('✏️ [API] Actualizar - Body: ${response.body}');
+
+      // Manejar diferentes códigos de estado
+      if (response.statusCode == 404) {
+        print('❌ [API] Receta no encontrada o endpoint no implementado');
+        throw Exception(
+          'El endpoint de actualización no está disponible en el servidor. '
+          'Por favor, implementa PUT /api/recetas/:id en tu backend.',
+        );
+      }
+
+      // Intentar parsear la respuesta JSON
+      dynamic data;
+      try {
+        data = jsonDecode(response.body);
+      } catch (jsonError) {
+        print('❌ [API] Error parseando JSON: $jsonError');
+        print('❌ [API] Raw response: ${response.body}');
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          // Si el status es exitoso pero no es JSON válido, asumir éxito
+          print('✅ [API] Actualización exitosa (respuesta no-JSON)');
+          return {
+            'success': true,
+            'message': 'Receta actualizada exitosamente',
+          };
+        } else {
+          throw Exception(
+            'Error del servidor (${response.statusCode}): Respuesta inválida. '
+            'Verifica que el backend esté funcionando correctamente.',
+          );
+        }
+      }
+
+      // Verificar código de estado después de parsear JSON
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final errorMessage = data is Map
+            ? (data['message'] ?? data['error'] ?? 'Error desconocido')
+            : 'Error del servidor';
+
+        print('❌ [API] Error actualizando receta: $errorMessage');
+        throw Exception('Error al actualizar la receta: $errorMessage');
+      }
+
+      print('✅ [API] Receta actualizada exitosamente');
+      return data is Map ? Map<String, dynamic>.from(data) : {'success': true};
+    } on http.ClientException catch (e) {
+      print('❌ [API] Error de conexión: $e');
+      throw Exception(
+        'No se pudo conectar al servidor. Verifica que el backend esté ejecutándose en http://localhost:3000',
+      );
+    } catch (e) {
+      print('❌ [API] Excepción actualizando receta: $e');
+      rethrow;
+    }
+  }
+
   /// Endpoint: DELETE /recetas/:id
   Future<void> eliminarReceta(String recetaId) async {
-    final response = await http.delete(
-      Uri.parse('$_baseUrl/recetas/$recetaId'),
-      headers: await _getHeaders(),
-    );
-    if (response.statusCode != 204) {
-      final data = jsonDecode(response.body);
-      throw Exception(data['message'] ?? 'No se pudo eliminar la receta');
+    print('🗑️ [API] Eliminando receta ID: $recetaId');
+    print('🗑️ [API] URL: $_baseUrl/recetas/$recetaId');
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/recetas/$recetaId'),
+        headers: await _getHeaders(),
+      );
+
+      print('🗑️ [API] Eliminar - Status: ${response.statusCode}');
+      print('🗑️ [API] Eliminar - Body: ${response.body}');
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final data = jsonDecode(response.body);
+        print(
+          '❌ [API] Error eliminando receta: ${data['message'] ?? 'Error desconocido'}',
+        );
+        throw Exception(data['message'] ?? 'No se pudo eliminar la receta');
+      }
+
+      print('✅ [API] Receta eliminada exitosamente');
+    } catch (e) {
+      print('❌ [API] Excepción eliminando receta: $e');
+      rethrow;
     }
   }
 }

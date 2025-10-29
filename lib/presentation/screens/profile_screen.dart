@@ -3,7 +3,6 @@ import '../../core/constants/app_colors.dart';
 import '../../services/api_service.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/create_recipe_widget.dart';
-import 'login_screen.dart';
 import 'recipe_detail_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -100,7 +99,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildNavLink(String text) {
-    return Text(text, style: Theme.of(context).textTheme.bodySmall);
+    return InkWell(
+      onTap: () => _handleNavigation(text),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        child: Text(
+          text,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        ),
+      ),
+    );
+  }
+
+  void _handleNavigation(String navText) {
+    switch (navText) {
+      case 'Inicio':
+        Navigator.pushReplacementNamed(context, '/home');
+        break;
+      case 'Explorar':
+        Navigator.pushReplacementNamed(context, '/home');
+        break;
+      case 'Favoritos':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sección de Favoritos próximamente')),
+        );
+        break;
+    }
   }
 
   Widget _buildProfileView() {
@@ -334,11 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await ApiService().cerrarSesion();
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
       if (mounted) {

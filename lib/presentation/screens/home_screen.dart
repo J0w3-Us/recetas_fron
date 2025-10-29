@@ -3,7 +3,6 @@ import '../../core/constants/app_colors.dart';
 import '../../services/api_service.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/recipe_detail_widget.dart';
-import 'profile_screen.dart';
 import 'recipe_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -129,19 +128,12 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildNavLink('Inicio'),
           const SizedBox(width: 32),
           _buildNavLink('Recetas'),
-          const SizedBox(width: 32),
-          _buildNavLink('Blog'),
-          const SizedBox(width: 32),
-          _buildNavLink('Contacto'),
           const SizedBox(width: 24),
 
           // Avatar
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
+              Navigator.pushNamed(context, '/profile');
             },
             child: const CircleAvatar(
               radius: 18,
@@ -156,7 +148,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNavLink(String text) {
-    return Text(text, style: Theme.of(context).textTheme.bodySmall);
+    return InkWell(
+      onTap: () => _handleNavigation(text),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        child: Text(
+          text,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        ),
+      ),
+    );
+  }
+
+  void _handleNavigation(String navText) {
+    switch (navText) {
+      case 'Inicio':
+        // Ya estamos en Home, no hacer nada o scroll to top
+        break;
+      case 'Recetas':
+        // Scroll to recipes section or stay here
+        break;
+    }
   }
 
   Widget _buildHomeView() {

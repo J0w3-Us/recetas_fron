@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_button.dart';
 import '../../services/api_service.dart';
-import 'signup_screen.dart';
-import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,10 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (mounted) {
           print('✅ [LOGIN] Login exitoso, navegando al Home');
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
+          Navigator.pushReplacementNamed(context, '/home');
         }
       } catch (e) {
         print('❌ [LOGIN] Error durante el login: $e');
@@ -156,12 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Center(
                           child: TextButton(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const SignupScreen(),
-                                ),
-                              );
+                              Navigator.pushNamed(context, '/signup');
                             },
                             child: const Text('Crear una cuenta'),
                           ),
