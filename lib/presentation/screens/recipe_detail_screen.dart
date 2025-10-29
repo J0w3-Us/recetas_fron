@@ -467,7 +467,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         );
       }
     } catch (e) {
+      print('❌ [RECIPE_DETAIL] Error al eliminar receta: $e');
       if (mounted) {
+        print('🗑️ [RECIPE_DETAIL] Cerrando indicador de carga y mostrando error');
         Navigator.of(context).pop(); // Cerrar indicador de carga
 
         ScaffoldMessenger.of(context).showSnackBar(

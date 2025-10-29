@@ -133,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Avatar
           GestureDetector(
             onTap: () {
+              print('🏠 [HOME_SCREEN] Usuario navegó a perfil desde avatar');
               Navigator.pushNamed(context, '/profile');
             },
             child: const CircleAvatar(
@@ -163,11 +164,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleNavigation(String navText) {
+    print('🏠 [HOME_SCREEN] Usuario navegó desde header a: $navText');
     switch (navText) {
       case 'Inicio':
+        print('🏠 [HOME_SCREEN] Ya está en Inicio, no hay acción');
         // Ya estamos en Home, no hacer nada o scroll to top
         break;
       case 'Recetas':
+        print('🏠 [HOME_SCREEN] Navegación a sección de recetas');
         // Scroll to recipes section or stay here
         break;
     }
