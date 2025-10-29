@@ -432,7 +432,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   Future<void> _eliminarReceta(String recetaId) async {
     try {
+      print('🗑️ [RECIPE_DETAIL] Iniciando proceso de eliminación para receta: $recetaId');
+      
       // Mostrar indicador de carga
+      print('🗑️ [RECIPE_DETAIL] Mostrando indicador de carga');
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -447,12 +450,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         ),
       );
 
+      print('🗑️ [RECIPE_DETAIL] Llamando a API para eliminar receta');
       await _apiService.eliminarReceta(recetaId);
 
       if (mounted) {
+        print('🗑️ [RECIPE_DETAIL] Eliminación exitosa, cerrando diálogos y navegando');
         Navigator.of(context).pop(); // Cerrar indicador de carga
         Navigator.of(context).pop(); // Volver a la pantalla anterior
 
+        print('✅ [RECIPE_DETAIL] Mostrando mensaje de éxito');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Receta eliminada con éxito'),
