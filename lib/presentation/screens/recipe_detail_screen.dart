@@ -372,7 +372,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   void _navigateToEditRecipe(Map<String, dynamic> receta) async {
     print('🔧 [RECIPE_DETAIL] Navegando a pantalla de edición');
     print('🔧 [RECIPE_DETAIL] Datos de receta: ${receta.keys.toList()}');
-    
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => EditRecipeScreen(receta: receta)),
@@ -392,7 +392,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   void _mostrarDialogoEliminar(BuildContext context, String recetaId) {
     print('🗑️ [RECIPE_DETAIL] Iniciando proceso de eliminación');
     print('🗑️ [RECIPE_DETAIL] ID de receta: $recetaId');
-    
+
     if (recetaId.trim().isEmpty) {
       print('❌ [RECIPE_DETAIL] ID de receta vacío o inválido');
       ScaffoldMessenger.of(
@@ -432,8 +432,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   Future<void> _eliminarReceta(String recetaId) async {
     try {
-      print('🗑️ [RECIPE_DETAIL] Iniciando proceso de eliminación para receta: $recetaId');
-      
+      print(
+        '🗑️ [RECIPE_DETAIL] Iniciando proceso de eliminación para receta: $recetaId',
+      );
+
       // Mostrar indicador de carga
       print('🗑️ [RECIPE_DETAIL] Mostrando indicador de carga');
       showDialog(
@@ -454,7 +456,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       await _apiService.eliminarReceta(recetaId);
 
       if (mounted) {
-        print('🗑️ [RECIPE_DETAIL] Eliminación exitosa, cerrando diálogos y navegando');
+        print(
+          '🗑️ [RECIPE_DETAIL] Eliminación exitosa, cerrando diálogos y navegando',
+        );
         Navigator.of(context).pop(); // Cerrar indicador de carga
         Navigator.of(context).pop(); // Volver a la pantalla anterior
 
@@ -469,7 +473,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     } catch (e) {
       print('❌ [RECIPE_DETAIL] Error al eliminar receta: $e');
       if (mounted) {
-        print('🗑️ [RECIPE_DETAIL] Cerrando indicador de carga y mostrando error');
+        print(
+          '🗑️ [RECIPE_DETAIL] Cerrando indicador de carga y mostrando error',
+        );
         Navigator.of(context).pop(); // Cerrar indicador de carga
 
         ScaffoldMessenger.of(context).showSnackBar(

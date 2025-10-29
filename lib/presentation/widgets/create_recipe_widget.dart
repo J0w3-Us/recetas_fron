@@ -85,6 +85,8 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
     setState(() => _isLoading = true);
 
     try {
+      print('📝 [CREATE_RECIPE] Preparando datos de la receta...');
+
       // Preparar ingredientes (filtrar vacíos)
       final ingredientes = _ingredientControllers
           .map((controller) => controller.text.trim())
@@ -97,6 +99,18 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
           .where((text) => text.isNotEmpty)
           .toList();
 
+      // Validar que tengamos datos mínimos requeridos
+      if (ingredientes.isEmpty) {
+        throw Exception('Debes agregar al menos un ingrediente');
+      }
+
+      if (pasos.isEmpty) {
+        throw Exception('Debes agregar al menos un paso');
+      }
+
+      print('📝 [CREATE_RECIPE] Ingredientes: $ingredientes');
+      print('📝 [CREATE_RECIPE] Pasos: $pasos');
+
       // Para esta demo, usamos una URL de imagen placeholder
       // En una implementación real, aquí subirías _compressedImageData a Supabase Storage
       final datosReceta = {
@@ -108,6 +122,7 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
             'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600', // Placeholder
       };
 
+      print('📝 [CREATE_RECIPE] Datos finales a enviar: $datosReceta');
       await ApiService().crearReceta(datosReceta);
 
       if (mounted) {
@@ -120,12 +135,49 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
         Navigator.pop(context);
       }
     } catch (e) {
+      print('❌ [CREATE_RECIPE] Error: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al crear la receta: $e'),
-            backgroundColor: Colors.red,
+
+        // Mostrar diálogo de error detallado
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('❌ Error al Crear Receta'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'No se pudo crear la receta:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(e.toString().replaceFirst('Exception: ', '')),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '💡 Información para desarrolladores:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Verifica que:\n'
+                    '• El backend esté ejecutándose en localhost:3000\n'
+                    '• El endpoint POST /api/recetas esté implementado\n'
+                    '• Los datos enviados tengan el formato correcto\n'
+                    '• Revisa los logs en la consola para más detalles',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }

@@ -114,14 +114,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _handleNavigation(String navText) {
+    print('👤 [PROFILE_SCREEN] Usuario navegó desde header a: $navText');
     switch (navText) {
       case 'Inicio':
+        print('👤 [PROFILE_SCREEN] Navegando a pantalla de inicio');
         Navigator.pushReplacementNamed(context, '/home');
         break;
       case 'Explorar':
+        print('👤 [PROFILE_SCREEN] Navegando a explorar (home)');
         Navigator.pushReplacementNamed(context, '/home');
         break;
       case 'Favoritos':
+        print(
+          '👤 [PROFILE_SCREEN] Mostrando mensaje de favoritos próximamente',
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sección de Favoritos próximamente')),
         );
@@ -342,12 +348,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToRecipeDetail(String recetaId) {
+    print(
+      '👤 [PROFILE_SCREEN] Usuario seleccionó receta desde perfil: $recetaId',
+    );
     if (recetaId.trim().isEmpty) {
+      print('❌ [PROFILE_SCREEN] ID de receta inválido: "$recetaId"');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('ID de receta inválido')));
       return;
     }
+    print('👤 [PROFILE_SCREEN] Navegando a detalle de receta');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -358,11 +369,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _handleLogout() async {
     try {
+      print('👤 [PROFILE_SCREEN] Iniciando proceso de logout');
       await ApiService().cerrarSesion();
       if (mounted) {
+        print('✅ [PROFILE_SCREEN] Logout exitoso, navegando a login');
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
+      print('❌ [PROFILE_SCREEN] Error durante logout: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
