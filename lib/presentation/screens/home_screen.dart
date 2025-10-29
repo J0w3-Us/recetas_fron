@@ -360,6 +360,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToRecipeDetail(String recetaId) {
+    print('🏠 [HOME_SCREEN] Usuario seleccionó receta: $recetaId');
     Navigator.push(
       context,
       MaterialPageRoute(
