@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 import '../../services/api_service.dart';
-import '../widgets/recipe_card.dart';
-import '../widgets/recipe_detail_widget.dart';
 import 'recipe_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,9 +10,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  bool _showRecipeDetail = false;
-
   String _getRecipeString(
     Map<String, dynamic> receta,
     List<String> keys, [
@@ -41,219 +35,234 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _toggleRecipeDetail() {
-    setState(() {
-      _showRecipeDetail = !_showRecipeDetail;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      body: SafeArea(
-        child: Column(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
           children: [
-            // Header
-            _buildHeader(),
-
-            // Contenido
-            Expanded(
-              child: _showRecipeDetail
-                  ? _buildRecipeDetailView()
-                  : _buildHomeView(),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.blue[600],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(
+                Icons.restaurant_menu,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'RecipeBrand',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      color: Colors.white,
-      child: Row(
-        children: [
-          // Logo
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Icon(
-              Icons.menu_book_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text('RecipeBrand', style: Theme.of(context).textTheme.titleMedium),
-          const Spacer(),
-
-          // Barra de búsqueda
-          Container(
-            width: 300,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.backgroundSecondary,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar recetas...',
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Colors.grey[400],
-                  size: 20,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        actions: [
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              'Inicio',
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          const Spacer(),
-
-          // Menú
-          _buildNavLink('Inicio'),
-          const SizedBox(width: 32),
-          _buildNavLink('Recetas'),
-          const SizedBox(width: 24),
-
-          // Avatar
-          GestureDetector(
-            onTap: () {
-              print('🏠 [HOME_SCREEN] Usuario navegó a perfil desde avatar');
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              'Tendencia',
+              style: TextStyle(
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              'Blog',
+              style: TextStyle(
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              'Contacto',
+              style: TextStyle(
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          IconButton(
+            icon: const Icon(
+              Icons.person,
+              color: Colors.black54,
+            ),
+            onPressed: () {
               Navigator.pushNamed(context, '/profile');
             },
-            child: const CircleAvatar(
-              radius: 18,
-              backgroundImage: NetworkImage(
-                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
-              ),
-            ),
           ),
         ],
       ),
-    );
-  }
+      body: FutureBuilder<List<dynamic>>(
+        future: ApiService().obtenerTodasLasRecetas(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-  Widget _buildNavLink(String text) {
-    return InkWell(
-      onTap: () => _handleNavigation(text),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-        child: Text(
-          text,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-        ),
-      ),
-    );
-  }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Error al cargar las recetas: ${snapshot.error}'),
+            );
+          }
 
-  void _handleNavigation(String navText) {
-    print('🏠 [HOME_SCREEN] Usuario navegó desde header a: $navText');
-    switch (navText) {
-      case 'Inicio':
-        print('🏠 [HOME_SCREEN] Ya está en Inicio, no hay acción');
-        // Ya estamos en Home, no hacer nada o scroll to top
-        break;
-      case 'Recetas':
-        print('🏠 [HOME_SCREEN] Navegación a sección de recetas');
-        // Scroll to recipes section or stay here
-        break;
-    }
-  }
+          final recetas = snapshot.data ?? [];
 
-  Widget _buildHomeView() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 40),
-          // Receta destacada
-          _buildFeaturedRecipe(),
-          const SizedBox(height: 60),
-          // Recetas populares
-          _buildPopularRecipes(),
-          const SizedBox(height: 60),
-          // Footer
-          _buildFooter(),
-        ],
-      ),
-    );
-  }
+          if (recetas.isEmpty) {
+            return const Center(child: Text('No hay recetas disponibles'));
+          }
 
-  Widget _buildFeaturedRecipe() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 80),
-      child: Row(
-        children: [
-          // Imagen
-          Expanded(
-            flex: 5,
-            child: Container(
-              height: 350,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                image: const DecorationImage(
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800',
-                  ),
-                  fit: BoxFit.cover,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadowMedium,
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 60),
-
-          // Información
-          Expanded(
-            flex: 5,
+          return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'RECETA DEL DÍA',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                    letterSpacing: 1.2,
+                // Receta destacada del día
+                _buildFeaturedRecipe(recetas.isNotEmpty ? recetas[0] : null),
+                
+                const SizedBox(height: 60),
+                
+                // Sección de Recetas Populares
+                _buildPopularRecipes(recetas),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFeaturedRecipe(Map<String, dynamic>? receta) {
+    if (receta == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 60),
+      child: Row(
+        children: [
+          // Imagen de la receta
+          Expanded(
+            child: Container(
+              height: 400,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                image: DecorationImage(
+                  image: NetworkImage(
+                    receta['imagen_url'] ?? 
+                    receta['image_url'] ?? 
+                    'https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=600'
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(width: 60),
+          
+          // Contenido de la receta
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'RECETA DEL DÍA',
+                    style: TextStyle(
+                      color: Colors.blue[600],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Pasta Fresca al Pesto con Tomates Cherry',
-                  style: Theme.of(context).textTheme.displayMedium,
-                ),
+                
                 const SizedBox(height: 20),
+                
                 Text(
-                  'Una explosión de sabor mediterráneo en tu paladar. Nuestra receta del día combina la frescura de la albahaca, el toque salado del parmesano y la dulzura de los tomates cherry para crear un plato inolvidable y fácil de preparar.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  _getRecipeString(receta, [
+                    'titulo',
+                    'title', 
+                    'name',
+                    'nombre'
+                  ], 'Pasta Fresca al Pesto con Tomates Cherry'),
+                  style: const TextStyle(
+                    fontSize: 42,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    color: Colors.black87,
+                  ),
                 ),
+                
+                const SizedBox(height: 20),
+                
+                Text(
+                  _getRecipeString(receta, [
+                    'descripcion',
+                    'description'
+                  ], 'Una explosión de sabor mediterráneo en tu paladar. Nuestra receta de día combina la frescura de la albahaca, el toque salado del parmesano y la dulzura de los tomates cherry para crear un plato inolvidable y fácil de preparar.'),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black54,
+                    height: 1.6,
+                  ),
+                ),
+                
                 const SizedBox(height: 32),
+                
                 ElevatedButton(
-                  onPressed: _toggleRecipeDetail,
-                  child: const Text('Preparar Ahora'),
+                  onPressed: () => _navigateToRecipeDetail(_getRecipeId(receta)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[600],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Preparar Ahora',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -263,233 +272,133 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPopularRecipes() {
-    return Column(
-      children: [
-        Text(
-          'Recetas Populares',
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
-        const SizedBox(height: 40),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 80),
-          child: FutureBuilder<List<dynamic>>(
-            future: () {
-              print(
-                '🏠 [HOME] Iniciando carga de recetas desde el FutureBuilder',
-              );
-              return ApiService().obtenerTodasLasRecetas();
-            }(),
-            builder: (context, snapshot) {
-              print(
-                '🏠 [HOME] FutureBuilder - Estado: ${snapshot.connectionState}',
-              );
-
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                print('🏠 [HOME] Esperando respuesta de la API...');
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                print('❌ [HOME] Error en FutureBuilder: ${snapshot.error}');
-                return Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text('Error al cargar las recetas: ${snapshot.error}'),
-                    ],
-                  ),
-                );
-              }
-
-              final recetas = snapshot.data ?? [];
-              print('🏠 [HOME] Recetas recibidas: ${recetas.length}');
-
-              if (recetas.isEmpty) {
-                print('⚠️ [HOME] No se encontraron recetas');
-                return const Center(child: Text('No hay recetas disponibles'));
-              }
-
-              // Mostrar las primeras 3 recetas
-              final recetasLimitadas = recetas.take(3).toList();
-              print(
-                '🏠 [HOME] Mostrando ${recetasLimitadas.length} recetas en la UI',
-              );
-
-              return Row(
-                children: recetasLimitadas.asMap().entries.map((entry) {
-                  final receta = entry.value;
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: entry.key < recetasLimitadas.length - 1 ? 24 : 0,
-                      ),
-                      child: RecipeCard(
-                        title: _getRecipeString(receta, [
-                          'titulo',
-                          'title',
-                          'name',
-                          'nombre',
-                        ], 'Sin título'),
-                        description: _getRecipeString(receta, [
-                          'descripcion',
-                          'description',
-                        ], 'Sin descripción'),
-                        imageUrl:
-                            receta['imagen_url'] ??
-                            receta['image_url'] ??
-                            receta['imagen'] ??
-                            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600',
-                        onTap: () =>
-                            _navigateToRecipeDetail(_getRecipeId(receta)),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _navigateToRecipeDetail(String recetaId) {
-    print('🏠 [HOME_SCREEN] Usuario seleccionó receta: $recetaId');
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RecipeDetailScreen(recetaId: recetaId),
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
+  Widget _buildPopularRecipes(List<dynamic> recetas) {
+    final popularRecipes = recetas.take(3).toList();
+    
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 80),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'Recetas Populares',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          
+          const SizedBox(height: 40),
+          
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildFooterLink('Sobre Nosotros'),
-              const SizedBox(width: 40),
-              _buildFooterLink('Política de Privacidad'),
-              const SizedBox(width: 40),
-              _buildFooterLink('Términos de Servicio'),
-            ],
+            children: popularRecipes.asMap().entries.map((entry) {
+              final index = entry.key;
+              final receta = entry.value;
+              
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(
+                    right: index < popularRecipes.length - 1 ? 24 : 0,
+                  ),
+                  child: _buildPopularRecipeCard(receta),
+                ),
+              );
+            }).toList(),
           ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildSocialIcon(Icons.facebook),
-              const SizedBox(width: 16),
-              _buildSocialIcon(Icons.camera_alt),
-              const SizedBox(width: 16),
-              _buildSocialIcon(Icons.link),
-              const SizedBox(width: 16),
-              _buildSocialIcon(Icons.chat),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            '© 2024 RecipeBrand. Todos los derechos reservados.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(fontSize: 12),
-          ),
+          
+          const SizedBox(height: 60),
         ],
       ),
     );
   }
 
-  Widget _buildFooterLink(String text) {
-    return Text(text, style: Theme.of(context).textTheme.bodySmall);
-  }
-
-  Widget _buildSocialIcon(IconData icon) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.grey[200],
+  Widget _buildPopularRecipeCard(Map<String, dynamic> receta) {
+    return GestureDetector(
+      onTap: () => _navigateToRecipeDetail(_getRecipeId(receta)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen
+            Container(
+              height: 200,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                image: DecorationImage(
+                  image: NetworkImage(
+                    receta['imagen_url'] ?? 
+                    receta['image_url'] ?? 
+                    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            
+            // Contenido
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getRecipeString(receta, [
+                      'titulo',
+                      'title',
+                      'name', 
+                      'nombre'
+                    ], 'Receta Deliciosa'),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  Text(
+                    _getRecipeString(receta, [
+                      'descripcion',
+                      'description'
+                    ], 'Una deliciosa receta que te encantará preparar y disfrutar.'),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Icon(icon, size: 18, color: Colors.grey[700]),
     );
   }
 
-  Widget _buildRecipeDetailView() {
-    return Stack(
-      children: [
-        RecipeDetailWidget(
-          title: 'Lasaña Clásica a la Boloñesa',
-          imageUrl:
-              'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=1200',
-          time: '90 min',
-          servings: '8 personas',
-          difficulty: 'Intermedia',
-          ingredients: const [
-            '500g de carne picada (mitad cerdo, mitad ternera)',
-            '12 láminas de lasaña',
-            '1 cebolla grande, picada',
-            '2 dientes de ajo, picados',
-            '800g de tomate triturado',
-            '1L de leche',
-            '60g de mantequilla',
-            '60g de harina',
-            '200g de queso Parmesano rallado',
-            'Aceite de oliva, sal, pimienta y nuez moscada',
-          ],
-          steps: const [
-            {
-              'title': 'Salsa Boloñesa:',
-              'description':
-                  'Sofríe la cebolla y el ajo en aceite de oliva. Añade la carne picada y dora. Incorpora el tomate triturado, sal, pimienta y cocina a fuego lento durante 45 minutos.',
-            },
-            {
-              'title': 'Salsa Bechamel:',
-              'description':
-                  'Derrite la mantequilla, añade la harina y cocina por 1 minuto (roux). Vierte la leche poco a poco, sin dejar de remover, hasta que espese. Sazona con sal, pimienta y nuez moscada.',
-            },
-            {
-              'title': '',
-              'description':
-                  'Precalienta el horno a 180°C (350°F). Cocer las láminas de lasaña según las instrucciones del paquete, si no son precocidas.',
-            },
-            {
-              'title': 'Montaje:',
-              'description':
-                  'En una fuente de horno, poner una capa de bechamel, seguida de láminas de lasaña, salsa boloñesa, bechamel y queso Parmesano. Repetir hasta terminar los ingredientes, acabando con una capa de bechamel y abundante queso.',
-            },
-            {
-              'title': 'Horneado:',
-              'description':
-                  'Hornear durante 30-40 minutos, o hasta que la superficie esté dorada y burbujante. Dejar reposar 10 minutos antes de servir. ¡Buen provecho!',
-            },
-          ],
-        ),
-        Positioned(
-          top: 20,
-          left: 20,
-          child: ElevatedButton.icon(
-            onPressed: _toggleRecipeDetail,
-            icon: const Icon(Icons.arrow_back, size: 18),
-            label: const Text('Volver'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
+  void _navigateToRecipeDetail(String recetaId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RecipeDetailScreen(recetaId: recetaId),
+      ),
     );
   }
 }
