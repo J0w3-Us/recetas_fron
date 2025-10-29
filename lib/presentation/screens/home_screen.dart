@@ -72,48 +72,12 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {},
             child: const Text(
               'Inicio',
-              style: TextStyle(
-                color: Colors.blue,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Tendencia',
-              style: TextStyle(
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Blog',
-              style: TextStyle(
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Contacto',
-              style: TextStyle(
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w500),
             ),
           ),
           const SizedBox(width: 16),
           IconButton(
-            icon: const Icon(
-              Icons.person,
-              color: Colors.black54,
-            ),
+            icon: const Icon(Icons.person, color: Colors.black54),
             onPressed: () {
               Navigator.pushNamed(context, '/profile');
             },
@@ -145,9 +109,9 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 // Receta destacada del día
                 _buildFeaturedRecipe(recetas.isNotEmpty ? recetas[0] : null),
-                
+
                 const SizedBox(height: 60),
-                
+
                 // Sección de Recetas Populares
                 _buildPopularRecipes(recetas),
               ],
@@ -173,18 +137,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(20),
                 image: DecorationImage(
                   image: NetworkImage(
-                    receta['imagen_url'] ?? 
-                    receta['image_url'] ?? 
-                    'https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=600'
+                    receta['imagen_url'] ??
+                        receta['image_url'] ??
+                        'https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=600',
                   ),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
           ),
-          
+
           const SizedBox(width: 60),
-          
+
           // Contenido de la receta
           Expanded(
             child: Column(
@@ -209,15 +173,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 Text(
                   _getRecipeString(receta, [
                     'titulo',
-                    'title', 
+                    'title',
                     'name',
-                    'nombre'
+                    'nombre',
                   ], 'Pasta Fresca al Pesto con Tomates Cherry'),
                   style: const TextStyle(
                     fontSize: 42,
@@ -226,25 +190,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.black87,
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 Text(
-                  _getRecipeString(receta, [
-                    'descripcion',
-                    'description'
-                  ], 'Una explosión de sabor mediterráneo en tu paladar. Nuestra receta de día combina la frescura de la albahaca, el toque salado del parmesano y la dulzura de los tomates cherry para crear un plato inolvidable y fácil de preparar.'),
+                  _getRecipeString(
+                    receta,
+                    ['descripcion', 'description'],
+                    'Una explosión de sabor mediterráneo en tu paladar. Nuestra receta de día combina la frescura de la albahaca, el toque salado del parmesano y la dulzura de los tomates cherry para crear un plato inolvidable y fácil de preparar.',
+                  ),
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.black54,
                     height: 1.6,
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 ElevatedButton(
-                  onPressed: () => _navigateToRecipeDetail(_getRecipeId(receta)),
+                  onPressed: () =>
+                      _navigateToRecipeDetail(_getRecipeId(receta)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[600],
                     foregroundColor: Colors.white,
@@ -258,10 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: const Text(
                     'Preparar Ahora',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                 ),
               ],
@@ -274,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPopularRecipes(List<dynamic> recetas) {
     final popularRecipes = recetas.take(3).toList();
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 80),
       child: Column(
@@ -288,14 +251,14 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.black87,
             ),
           ),
-          
+
           const SizedBox(height: 40),
-          
+
           Row(
             children: popularRecipes.asMap().entries.map((entry) {
               final index = entry.key;
               final receta = entry.value;
-              
+
               return Expanded(
                 child: Container(
                   margin: EdgeInsets.only(
@@ -306,7 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }).toList(),
           ),
-          
+
           const SizedBox(height: 60),
         ],
       ),
@@ -340,15 +303,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 image: DecorationImage(
                   image: NetworkImage(
-                    receta['imagen_url'] ?? 
-                    receta['image_url'] ?? 
-                    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'
+                    receta['imagen_url'] ??
+                        receta['image_url'] ??
+                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600',
                   ),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            
+
             // Contenido
             Padding(
               padding: const EdgeInsets.all(20),
@@ -359,8 +322,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     _getRecipeString(receta, [
                       'titulo',
                       'title',
-                      'name', 
-                      'nombre'
+                      'name',
+                      'nombre',
                     ], 'Receta Deliciosa'),
                     style: const TextStyle(
                       fontSize: 18,
@@ -368,14 +331,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.black87,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   Text(
-                    _getRecipeString(receta, [
-                      'descripcion',
-                      'description'
-                    ], 'Una deliciosa receta que te encantará preparar y disfrutar.'),
+                    _getRecipeString(
+                      receta,
+                      ['descripcion', 'description'],
+                      'Una deliciosa receta que te encantará preparar y disfrutar.',
+                    ),
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.black54,

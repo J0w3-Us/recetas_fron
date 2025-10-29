@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
-import '../widgets/recipe_card.dart';
-import '../widgets/create_recipe_widget.dart';
 import 'recipe_detail_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -13,29 +11,272 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _showCreateRecipe = false;
+  String? _userName;
 
-  void _toggleCreateRecipe() {
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    print('👤 [PROFILE] Cargando nombre de usuario');
+    final prefs = await SharedPreferences.getInstance();
+    final userName = prefs.getString('user_name');
+    print('👤 [PROFILE] Nombre de usuario: $userName');
     setState(() {
-      _showCreateRecipe = !_showCreateRecipe;
+      _userName = userName;
     });
+  }
+
+  String _getRecipeString(
+    Map<String, dynamic> receta,
+    List<String> keys, [
+    String fallback = 'Sin título',
+  ]) {
+    for (final k in keys) {
+      final val = receta[k];
+      if (val != null) {
+        final s = val.toString();
+        if (s.trim().isNotEmpty) return s;
+      }
+    }
+    return fallback;
+  }
+
+  String _getRecipeId(Map<String, dynamic> receta) {
+    return (receta['id'] ??
+                receta['_id'] ??
+                receta['recetaId'] ??
+                receta['receta_id'])
+            ?.toString() ??
+        '';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      body: SafeArea(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.blue[600],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(
+                Icons.restaurant_menu,
+                color: Colors.white,
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'RecetasDeliciosas',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+            child: const Text('Inicio'),
+          ),
+          TextButton(onPressed: () {}, child: const Text('Explorar')),
+          TextButton(onPressed: () {}, child: const Text('Favoritos')),
+          const SizedBox(width: 20),
+          PopupMenuButton<String>(
+            child: CircleAvatar(
+              backgroundColor: Colors.grey[300],
+              radius: 16,
+              child: Icon(Icons.person, size: 18, color: Colors.grey[600]),
+            ),
+            onSelected: (value) {
+              if (value == 'logout') {
+                _handleLogout();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, size: 18),
+                    SizedBox(width: 8),
+                    Text('Cerrar Sesión'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 20),
+        ],
+      ),
+      body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header
-            _buildHeader(),
+            // Header del perfil
+            Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 60),
+              child: Column(
+                children: [
+                  // Avatar y nombre
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: const NetworkImage(
+                      'https://images.unsplash.com/photo-1494790108755-2616b612b977?w=200',
+                    ),
+                  ),
 
-            // Contenido
-            Expanded(
-              child: _showCreateRecipe
-                  ? _buildCreateRecipeView()
-                  : _buildProfileView(),
+                  const SizedBox(height: 20),
+
+                  Text(
+                    _userName ?? 'Ana García',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    'Amante de la cocina casera',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Botón Crear Nueva Receta
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/create-recipe');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[600],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text(
+                      'Crear Nueva Receta',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            // Sección Mis Recetas
+            Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Mis Recetas',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Grid de recetas
+                  FutureBuilder<List<dynamic>>(
+                    future: ApiService().obtenerMisRecetas(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        print('👤 [PROFILE] Cargando mis recetas...');
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(40),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        print(
+                          '❌ [PROFILE] Error cargando recetas: ${snapshot.error}',
+                        );
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40),
+                            child: Text(
+                              'Error al cargar tus recetas: ${snapshot.error}',
+                            ),
+                          ),
+                        );
+                      }
+
+                      final recetas = snapshot.data ?? [];
+                      print('👤 [PROFILE] ${recetas.length} recetas cargadas');
+
+                      if (recetas.isEmpty) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(60),
+                            child: Text(
+                              'No tienes recetas creadas aún.\n¡Crea tu primera receta!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 24,
+                              mainAxisSpacing: 24,
+                              childAspectRatio: 0.85,
+                            ),
+                        itemCount: recetas.length,
+                        itemBuilder: (context, index) {
+                          final receta = recetas[index];
+                          return _buildRecipeCard(receta);
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -43,322 +284,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      color: Colors.white,
-      child: Row(
-        children: [
-          // Logo
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(6),
+  Widget _buildRecipeCard(Map<String, dynamic> receta) {
+    return GestureDetector(
+      onTap: () => _navigateToRecipeDetail(_getRecipeId(receta)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: const Icon(
-              Icons.menu_book_rounded,
-              color: Colors.white,
-              size: 18,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen
+            Container(
+              height: 180,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
+                image: DecorationImage(
+                  image: NetworkImage(
+                    receta['imagen_url'] ??
+                        receta['image_url'] ??
+                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600',
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            'RecetasDeliciosas',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const Spacer(),
 
-          // Menú
-          _buildNavLink('Inicio'),
-          const SizedBox(width: 32),
-          _buildNavLink('Explorar'),
-          const SizedBox(width: 32),
-          _buildNavLink('Favoritos'),
-          const SizedBox(width: 32),
+            // Contenido
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _getRecipeString(receta, [
+                        'titulo',
+                        'title',
+                        'name',
+                        'nombre',
+                      ]),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
 
-          // Notificaciones
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-            color: AppColors.textSecondary,
-          ),
-          const SizedBox(width: 8),
+                    const SizedBox(height: 6),
 
-          // Avatar
-          const CircleAvatar(
-            radius: 18,
-            backgroundImage: NetworkImage(
-              'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+                    Text(
+                      'Tiempo de preparación: 30 min',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavLink(String text) {
-    return InkWell(
-      onTap: () => _handleNavigation(text),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-        child: Text(
-          text,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ],
         ),
       ),
     );
   }
 
-  void _handleNavigation(String navText) {
-    print('👤 [PROFILE_SCREEN] Usuario navegó desde header a: $navText');
-    switch (navText) {
-      case 'Inicio':
-        print('👤 [PROFILE_SCREEN] Navegando a pantalla de inicio');
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 'Explorar':
-        print('👤 [PROFILE_SCREEN] Navegando a explorar (home)');
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 'Favoritos':
-        print(
-          '👤 [PROFILE_SCREEN] Mostrando mensaje de favoritos próximamente',
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sección de Favoritos próximamente')),
-        );
-        break;
-    }
-  }
-
-  Widget _buildProfileView() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 40),
-          // Banner de perfil
-          _buildProfileBanner(),
-          const SizedBox(height: 40),
-          // Botón crear receta
-          SizedBox(
-            width: 300,
-            height: 54,
-            child: ElevatedButton.icon(
-              onPressed: _toggleCreateRecipe,
-              icon: const Icon(Icons.add, size: 20),
-              label: const Text('Crear Nueva Receta'),
-            ),
-          ),
-          const SizedBox(height: 60),
-          // Mis recetas
-          _buildMyRecipes(),
-          const SizedBox(height: 60),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileBanner() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        children: [
-          // Avatar
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 4),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadowMedium,
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-              image: const DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-                ),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text('Ana García', style: Theme.of(context).textTheme.displaySmall),
-          const SizedBox(height: 8),
-          Text(
-            'Amante de la cocina casera',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMyRecipes() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 80),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Mis Recetas',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              ElevatedButton(
-                onPressed: _handleLogout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Cerrar Sesión'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-
-          FutureBuilder<List<dynamic>>(
-            future: ApiService().obtenerMisRecetas(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text('Error al cargar tus recetas: ${snapshot.error}'),
-                    ],
-                  ),
-                );
-              }
-
-              final recetas = snapshot.data ?? [];
-              if (recetas.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: Text(
-                      'No tienes recetas creadas aún.\n¡Crea tu primera receta!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  ),
-                );
-              }
-
-              // Organizar recetas en filas de 3
-              final rows = <Widget>[];
-              for (int i = 0; i < recetas.length; i += 3) {
-                final rowRecetas = recetas.sublist(
-                  i,
-                  (i + 3).clamp(0, recetas.length),
-                );
-                rows.add(
-                  Row(
-                    children: [
-                      for (int j = 0; j < rowRecetas.length; j++) ...[
-                        Expanded(
-                          child: Builder(
-                            builder: (context) {
-                              final receta =
-                                  rowRecetas[j] as Map<String, dynamic>;
-                              String getField(
-                                List<String> keys, [
-                                String def = 'Sin título',
-                              ]) {
-                                for (final k in keys) {
-                                  final v = receta[k];
-                                  if (v != null &&
-                                      v.toString().trim().isNotEmpty)
-                                    return v.toString();
-                                }
-                                return def;
-                              }
-
-                              String getId() =>
-                                  (receta['id'] ??
-                                          receta['_id'] ??
-                                          receta['recetaId'] ??
-                                          receta['receta_id'])
-                                      ?.toString() ??
-                                  '';
-
-                              return RecipeCard(
-                                title: getField([
-                                  'titulo',
-                                  'title',
-                                  'name',
-                                  'nombre',
-                                ]),
-                                description: 'Creado por ti',
-                                imageUrl:
-                                    receta['imagen_url'] ??
-                                    receta['image_url'] ??
-                                    receta['imagen'] ??
-                                    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600',
-                                onTap: () => _navigateToRecipeDetail(getId()),
-                              );
-                            },
-                          ),
-                        ),
-                        if (j < rowRecetas.length - 1)
-                          const SizedBox(width: 24),
-                        if (j == rowRecetas.length - 1 && rowRecetas.length < 3)
-                          ...List.generate(
-                            3 - rowRecetas.length,
-                            (index) => const Expanded(child: SizedBox()),
-                          ),
-                      ],
-                    ],
-                  ),
-                );
-                if (i + 3 < recetas.length) {
-                  rows.add(const SizedBox(height: 24));
-                }
-              }
-
-              return Column(children: rows);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   void _navigateToRecipeDetail(String recetaId) {
-    print(
-      '👤 [PROFILE_SCREEN] Usuario seleccionó receta desde perfil: $recetaId',
-    );
-    if (recetaId.trim().isEmpty) {
-      print('❌ [PROFILE_SCREEN] ID de receta inválido: "$recetaId"');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('ID de receta inválido')));
-      return;
-    }
-    print('👤 [PROFILE_SCREEN] Navegando a detalle de receta');
+    print('👤 [PROFILE] Navegando a receta ID: $recetaId');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -368,15 +370,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _handleLogout() async {
+    print('🚪 [PROFILE] Iniciando logout');
     try {
-      print('👤 [PROFILE_SCREEN] Iniciando proceso de logout');
       await ApiService().cerrarSesion();
+      print('✅ [PROFILE] Logout exitoso');
       if (mounted) {
-        print('✅ [PROFILE_SCREEN] Logout exitoso, navegando a login');
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
-      print('❌ [PROFILE_SCREEN] Error durante logout: $e');
+      print('❌ [PROFILE] Error en logout: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -386,26 +388,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
-  }
-
-  Widget _buildCreateRecipeView() {
-    return Stack(
-      children: [
-        const CreateRecipeWidget(),
-        Positioned(
-          top: 20,
-          left: 20,
-          child: ElevatedButton.icon(
-            onPressed: _toggleCreateRecipe,
-            icon: const Icon(Icons.arrow_back, size: 18),
-            label: const Text('Volver'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }

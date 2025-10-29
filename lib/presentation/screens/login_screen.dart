@@ -23,20 +23,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    print('🔐 [LOGIN] Iniciando proceso de login');
-    print('🔐 [LOGIN] Validando formulario...');
-
     if (_formKey.currentState!.validate()) {
-      print('✅ [LOGIN] Formulario válido');
       setState(() => _isLoading = true);
 
       try {
-        print('🔐 [LOGIN] Creando instancia de ApiService');
         final apiService = ApiService();
-
-        print('🔐 [LOGIN] Intentando login con:');
-        print('   - Email: ${_emailController.text}');
-        print('   - Contraseña: [HIDDEN]');
 
         await apiService.iniciarSesion(
           _emailController.text,
@@ -44,11 +35,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         if (mounted) {
-          print('✅ [LOGIN] Login exitoso, navegando al Home');
           Navigator.pushReplacementNamed(context, '/home');
         }
       } catch (e) {
-        print('❌ [LOGIN] Error durante el login: $e');
         if (mounted) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -59,8 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       }
-    } else {
-      print('❌ [LOGIN] Formulario inválido');
     }
   }
 

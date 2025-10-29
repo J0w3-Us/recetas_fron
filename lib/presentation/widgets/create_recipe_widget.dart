@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 import '../../services/api_service.dart';
 import '../widgets/custom_button.dart';
 import '../../utils/image_optimizer.dart';
@@ -67,12 +66,16 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
   }
 
   Future<void> _handleSubmit() async {
+    print('📝 [CREATE_WIDGET] Iniciando envío de formulario');
+
     if (!_formKey.currentState!.validate()) {
+      print('❌ [CREATE_WIDGET] Formulario no es válido');
       return;
     }
 
     // Validar que haya imagen
     if (_compressedImageData == null) {
+      print('⚠️ [CREATE_WIDGET] Falta imagen');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, sube una imagen de la receta'),
@@ -82,6 +85,7 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
       return;
     }
 
+    print('✅ [CREATE_WIDGET] Formulario válido, iniciando creación');
     setState(() => _isLoading = true);
 
     try {
@@ -122,20 +126,21 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
             'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600', // Placeholder
       };
 
-      print('📝 [CREATE_RECIPE] Datos finales a enviar: $datosReceta');
-      await ApiService().crearReceta(datosReceta);
+      print('📝 [CREATE_WIDGET] Datos finales a enviar: $datosReceta');
+      final resultado = await ApiService().crearReceta(datosReceta);
+      print('✅ [CREATE_WIDGET] Receta creada, resultado: $resultado');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Receta publicada con éxito!'),
-            backgroundColor: AppColors.success,
+          SnackBar(
+            content: const Text('¡Receta publicada con éxito!'),
+            backgroundColor: Colors.green[600],
           ),
         );
         Navigator.pop(context);
       }
     } catch (e) {
-      print('❌ [CREATE_RECIPE] Error: $e');
+      print('❌ [CREATE_WIDGET] Error al crear receta: $e');
       if (mounted) {
         setState(() => _isLoading = false);
 
@@ -345,11 +350,16 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border, width: 2),
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey[300]!,
+          width: 2,
+          style: BorderStyle.solid,
+        ),
       ),
       child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () async {
           // Abrir selector y comprimir la imagen
           final data = await pickAndCompressImage();
@@ -362,29 +372,36 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.add_photo_alternate_outlined,
-              size: 48,
-              color: Colors.grey[400],
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.add_photo_alternate_outlined,
+                size: 32,
+                color: Colors.blue[600],
+              ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Sube un archivo',
+            Text(
+              'Sube una imagen',
               style: TextStyle(
-                fontSize: 15,
-                color: AppColors.primary,
+                fontSize: 16,
+                color: Colors.blue[600],
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'o arrastra y suelta',
-              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              'o arrastra y suelta aquí',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               'PNG, JPG, GIF hasta 10MB',
-              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -430,8 +447,8 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
               width: 32,
               height: 32,
               margin: const EdgeInsets.only(top: 12),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              decoration: BoxDecoration(
+                color: Colors.blue[600],
                 shape: BoxShape.circle,
               ),
               child: Center(

@@ -4,17 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  final String _baseUrl =
-      'http://localhost:3000/api'; // La URL donde corre tu API
+  final String _baseUrl = 'http://localhost:3000/api';
 
-  // --- Manejo del Token JWT ---
+  // --- MANEJO DE AUTENTICACIÓN (TOKEN) ---
 
-  Future<void> _guardarToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('recetas_token', token);
-  }
-
-  Future<void> _guardarDatosUsuario(
+  Future<void> _guardarToken(
     String token,
     String userId,
     String userName,
@@ -25,7 +19,7 @@ class ApiService {
     await prefs.setString('user_name', userName);
   }
 
-  Future<String?> _getToken() async {
+  Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('recetas_token');
   }
@@ -35,67 +29,26 @@ class ApiService {
     return prefs.getString('user_id');
   }
 
-  Future<String?> getCurrentUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_name');
-  }
-
   Future<void> cerrarSesion() async {
+    print('🚪 [LOGOUT] Iniciando cierre de sesión');
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('recetas_token');
     await prefs.remove('user_id');
     await prefs.remove('user_name');
+    print('✅ [LOGOUT] Sesión cerrada, datos eliminados');
   }
 
   Future<Map<String, String>> _getHeaders() async {
-    final token = await _getToken();
+    final token = await getToken();
     return {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=UTF-8',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
 
   // ===================================================================
-  // ===      LLAMADAS A LOS ENDPOINTS DE TU API                     ===
+  // ===      LLAMADAS A LOS ENDPOINTS DE LA API                     ===
   // ===================================================================
-
-  /// Verificar conectividad del servidor
-  Future<bool> verificarConexion() async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse('$_baseUrl/health'),
-            headers: {'Content-Type': 'application/json'},
-          )
-          .timeout(const Duration(seconds: 5));
-
-      return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Verificar si el token actual es válido
-  Future<bool> verificarTokenValido() async {
-    try {
-      final token = await _getToken();
-
-      if (token == null) {
-        return false;
-      }
-
-      // Hacer una llamada simple para verificar el token
-      final response = await http
-          .get(Uri.parse('$_baseUrl/recetas'), headers: await _getHeaders())
-          .timeout(const Duration(seconds: 5));
-
-      final esValido = response.statusCode != 401;
-
-      return esValido;
-    } catch (e) {
-      return false;
-    }
-  }
 
   /// Endpoint: POST /auth/register
   Future<Map<String, dynamic>> registrarUsuario(
@@ -103,10 +56,11 @@ class ApiService {
     String email,
     String password,
   ) async {
+    print('🚀 [REGISTER] Iniciando registro para: $email');
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonEncode({
           'name': nombre,
           'email': email,
@@ -114,13 +68,21 @@ class ApiService {
         }),
       );
 
+      print('🚀 [REGISTER] Status: ${response.statusCode}');
+      print('🚀 [REGISTER] Response: ${response.body}');
+
       final data = jsonDecode(response.body);
-      if (response.statusCode != 201) {
+      if (response.statusCode >= 400) {
+        print(
+          '❌ [REGISTER] Error: ${data['message'] ?? 'Error en el registro'}',
+        );
         throw Exception(data['message'] ?? 'Error en el registro');
       }
 
+      print('✅ [REGISTER] Usuario registrado exitosamente');
       return data;
     } catch (e) {
+      print('❌ [REGISTER] Excepción: $e');
       rethrow;
     }
   }
@@ -130,151 +92,151 @@ class ApiService {
     String email,
     String password,
   ) async {
+    print('🔐 [LOGIN] Iniciando sesión para: $email');
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonEncode({'email': email, 'password': password}),
       );
 
+      print('🔐 [LOGIN] Status: ${response.statusCode}');
+      print('🔐 [LOGIN] Response: ${response.body}');
+
       final data = jsonDecode(response.body);
-      if (response.statusCode != 200) {
+      if (response.statusCode >= 400) {
+        print(
+          '❌ [LOGIN] Error: ${data['message'] ?? 'Email o contraseña incorrectos'}',
+        );
         throw Exception(data['message'] ?? 'Email o contraseña incorrectos');
       }
 
-      if (data['session']?['access_token'] != null) {
-        final session = data['session'];
-        final user = session['user'];
-        // Guardar token, ID y nombre del usuario
-        await _guardarDatosUsuario(
+      final session = data['session'];
+      final user = session?['user'];
+      if (session?['access_token'] != null && user?['id'] != null) {
+        print('🔐 [LOGIN] Guardando token y datos de usuario');
+        await _guardarToken(
           session['access_token'],
-          user['id']?.toString() ?? '',
-          user['user_metadata']?['name']?.toString() ??
-              user['email']?.toString() ??
-              'Usuario',
+          user['id'],
+          user['user_metadata']?['name'] ?? 'Usuario',
         );
+        print('✅ [LOGIN] Token guardado exitosamente');
+      } else {
+        print('⚠️ [LOGIN] No se recibió token válido en la respuesta');
       }
 
       return data;
     } catch (e) {
+      print('❌ [LOGIN] Excepción: $e');
       rethrow;
     }
   }
 
   /// Endpoint: GET /recetas
   Future<List<dynamic>> obtenerTodasLasRecetas() async {
+    print('📚 [GET_RECETAS] Obteniendo todas las recetas');
     try {
       final headers = await _getHeaders();
+      print('📚 [GET_RECETAS] Headers: $headers');
 
       final response = await http.get(
         Uri.parse('$_baseUrl/recetas'),
         headers: headers,
       );
 
-      final data = jsonDecode(response.body);
-      if (response.statusCode != 200) {
-        throw Exception(
-          data is Map
-              ? data['message'] ??
-                    data['error'] ??
-                    'No se pudieron cargar las recetas'
-              : 'No se pudieron cargar las recetas',
+      print('📚 [GET_RECETAS] Status: ${response.statusCode}');
+      print('📚 [GET_RECETAS] Response length: ${response.body.length} chars');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print(
+          '✅ [GET_RECETAS] ${data is List ? data.length : 'N/A'} recetas obtenidas',
         );
+        return data is List ? data : [];
+      } else {
+        print(
+          '❌ [GET_RECETAS] Error: ${response.statusCode} - ${response.body}',
+        );
+        throw Exception('Failed to load recipes: ${response.statusCode}');
       }
-
-      // Normalizar distintas formas de respuesta JSON
-      List<dynamic> recetas = [];
-      if (data is List) {
-        recetas = data;
-      } else if (data is Map) {
-        if (data['data'] is List)
-          recetas = List.from(data['data']);
-        else if (data['recetas'] is List)
-          recetas = List.from(data['recetas']);
-        else if (data['rows'] is List)
-          recetas = List.from(data['rows']);
-        else if (data['recipes'] is List)
-          recetas = List.from(data['recipes']);
-        else if (data['result'] is List)
-          recetas = List.from(data['result']);
-      }
-
-      return recetas;
     } catch (e) {
+      print('❌ [GET_RECETAS] Excepción: $e');
       rethrow;
     }
   }
 
   /// Endpoint: GET /recetas/mis-recetas
   Future<List<dynamic>> obtenerMisRecetas() async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/recetas/mis-recetas'),
-      headers: await _getHeaders(),
-    );
-    final data = jsonDecode(response.body);
-    if (response.statusCode != 200) {
-      throw Exception(
-        data is Map
-            ? data['message'] ?? 'No se pudieron cargar tus recetas'
-            : 'No se pudieron cargar tus recetas',
-      );
-    }
+    print('👤 [MIS_RECETAS] Obteniendo mis recetas');
+    try {
+      final headers = await _getHeaders();
+      print('👤 [MIS_RECETAS] Headers: $headers');
 
-    if (data is List) return data;
-    if (data is Map) {
-      if (data['data'] is List) return List.from(data['data']);
-      if (data['recetas'] is List) return List.from(data['recetas']);
-      if (data['rows'] is List) return List.from(data['rows']);
+      final response = await http.get(
+        Uri.parse('$_baseUrl/recetas/mis-recetas'),
+        headers: headers,
+      );
+
+      print('👤 [MIS_RECETAS] Status: ${response.statusCode}');
+      print('👤 [MIS_RECETAS] Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print(
+          '✅ [MIS_RECETAS] ${data is List ? data.length : 'N/A'} recetas obtenidas',
+        );
+        return data is List ? data : [];
+      } else {
+        print('❌ [MIS_RECETAS] Error: ${response.statusCode}');
+        throw Exception('Failed to load my recipes: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ [MIS_RECETAS] Excepción: $e');
+      rethrow;
     }
-    return <dynamic>[];
   }
 
   /// Endpoint: GET /recetas/:id
   Future<Map<String, dynamic>> obtenerRecetaPorId(String recetaId) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/recetas/$recetaId'),
-      headers: await _getHeaders(),
-    );
+    print('📖 [GET_RECETA] Obteniendo receta ID: $recetaId');
+    try {
+      final headers = await _getHeaders();
+      print('📖 [GET_RECETA] Headers: $headers');
 
-    final data = jsonDecode(response.body);
-    if (response.statusCode != 200) {
-      throw Exception(
-        data is Map
-            ? data['message'] ?? 'Receta no encontrada'
-            : 'Receta no encontrada',
+      final response = await http.get(
+        Uri.parse('$_baseUrl/recetas/$recetaId'),
+        headers: headers,
       );
-    }
 
-    if (data is Map) {
-      if (data['data'] is Map) return Map<String, dynamic>.from(data['data']);
-      if (data['receta'] is Map)
-        return Map<String, dynamic>.from(data['receta']);
-      // If the response is already the receta object
-      return Map<String, dynamic>.from(data);
-    }
+      print('📖 [GET_RECETA] Status: ${response.statusCode}');
+      print('📖 [GET_RECETA] Response: ${response.body}');
 
-    // Fallback empty map
-    return <String, dynamic>{};
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('✅ [GET_RECETA] Receta obtenida exitosamente');
+        return data is Map<String, dynamic> ? data : {};
+      } else {
+        print('❌ [GET_RECETA] Error: ${response.statusCode}');
+        throw Exception('Recipe not found: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ [GET_RECETA] Excepción: $e');
+      rethrow;
+    }
   }
 
   /// Endpoint: POST /recetas
   Future<Map<String, dynamic>> crearReceta(
     Map<String, dynamic> datosReceta,
   ) async {
+    print('➕ [CREATE_RECETA] Creando nueva receta');
+    print('➕ [CREATE_RECETA] Datos: $datosReceta');
     try {
-      // Transformar datos al formato que espera el backend
-      final datosParaBackend = {
-        'name': datosReceta['titulo'], // titulo -> name
-        'description': datosReceta['descripcion'], // descripcion -> description
-        'steps': datosReceta['pasos'], // pasos -> steps
-        'ingredients':
-            datosReceta['ingredientes'], // ingredientes -> ingredients
-        if (datosReceta['imagen_url'] != null)
-          'imagen_url': datosReceta['imagen_url'],
-      };
-
       final headers = await _getHeaders();
-      final body = jsonEncode(datosParaBackend);
+      print('➕ [CREATE_RECETA] Headers: $headers');
+
+      final body = jsonEncode(datosReceta);
+      print('➕ [CREATE_RECETA] Body JSON: $body');
 
       final response = await http.post(
         Uri.parse('$_baseUrl/recetas'),
@@ -282,58 +244,21 @@ class ApiService {
         body: body,
       );
 
-      // Intentar parsear la respuesta
-      dynamic data;
-      try {
-        data = jsonDecode(response.body);
-      } catch (jsonError) {
-        throw Exception('Respuesta del servidor no válida: ${response.body}');
-      }
+      print('➕ [CREATE_RECETA] Status: ${response.statusCode}');
+      print('➕ [CREATE_RECETA] Response: ${response.body}');
 
-      // Manejar diferentes códigos de estado
-      if (response.statusCode == 400) {
-        final errorMsg = data is Map
-            ? (data['message'] ??
-                  data['error'] ??
-                  data['details'] ??
-                  'Datos inválidos')
-            : 'Datos inválidos enviados al servidor';
-
-        throw Exception(
-          'Error en los datos enviados: $errorMsg\n\n'
-          'Verifica que todos los campos requeridos estén presentes:\n'
-          '- titulo (string)\n'
-          '- descripcion (string)\n'
-          '- ingredientes (array)\n'
-          '- pasos (array)\n'
-          '- imagen_url (string, opcional)',
+      final data = jsonDecode(response.body);
+      if (response.statusCode != 201) {
+        print(
+          '❌ [CREATE_RECETA] Error: ${data['message'] ?? 'Error al crear la receta'}',
         );
+        throw Exception(data['message'] ?? 'Error al crear la receta');
       }
 
-      // Manejar token inválido (401)
-      if (response.statusCode == 401) {
-        // Limpiar token inválido
-        await cerrarSesion();
-
-        throw Exception(
-          'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
-        );
-      }
-
-      if (response.statusCode != 201 && response.statusCode != 200) {
-        final errorMsg = data is Map
-            ? (data['message'] ?? data['error'] ?? 'Error desconocido')
-            : 'Error del servidor';
-
-        throw Exception('Error al crear la receta: $errorMsg');
-      }
-
-      return data is Map ? Map<String, dynamic>.from(data) : {'success': true};
-    } on http.ClientException {
-      throw Exception(
-        'No se pudo conectar al servidor. Verifica que el backend esté ejecutándose.',
-      );
+      print('✅ [CREATE_RECETA] Receta creada exitosamente');
+      return data;
     } catch (e) {
+      print('❌ [CREATE_RECETA] Excepción: $e');
       rethrow;
     }
   }
@@ -343,83 +268,65 @@ class ApiService {
     String recetaId,
     Map<String, dynamic> datosReceta,
   ) async {
+    print('✏️ [UPDATE_RECETA] Actualizando receta ID: $recetaId');
+    print('✏️ [UPDATE_RECETA] Datos: $datosReceta');
     try {
-      // Transformar datos al formato que espera el backend
-      final datosParaBackend = {
-        'name': datosReceta['titulo'], // titulo -> name
-        'description': datosReceta['descripcion'], // descripcion -> description
-        'steps': datosReceta['pasos'], // pasos -> steps
-        'ingredients':
-            datosReceta['ingredientes'], // ingredientes -> ingredients
-        if (datosReceta['imagen_url'] != null)
-          'imagen_url': datosReceta['imagen_url'],
-      };
+      final headers = await _getHeaders();
+      print('✏️ [UPDATE_RECETA] Headers: $headers');
+
+      final body = jsonEncode(datosReceta);
+      print('✏️ [UPDATE_RECETA] Body JSON: $body');
 
       final response = await http.put(
         Uri.parse('$_baseUrl/recetas/$recetaId'),
-        headers: await _getHeaders(),
-        body: jsonEncode(datosParaBackend),
+        headers: headers,
+        body: body,
       );
 
-      // Manejar diferentes códigos de estado
-      if (response.statusCode == 404) {
-        throw Exception(
-          'El endpoint de actualización no está disponible en el servidor. '
-          'Por favor, implementa PUT /api/recetas/:id en tu backend.',
+      print('✏️ [UPDATE_RECETA] Status: ${response.statusCode}');
+      print('✏️ [UPDATE_RECETA] Response: ${response.body}');
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode != 200) {
+        print(
+          '❌ [UPDATE_RECETA] Error: ${data['message'] ?? 'Error al actualizar la receta'}',
         );
+        throw Exception(data['message'] ?? 'Error al actualizar la receta');
       }
 
-      // Intentar parsear la respuesta JSON
-      dynamic data;
-      try {
-        data = jsonDecode(response.body);
-      } catch (jsonError) {
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          // Si el status es exitoso pero no es JSON válido, asumir éxito
-          return {
-            'success': true,
-            'message': 'Receta actualizada exitosamente',
-          };
-        } else {
-          throw Exception(
-            'Error del servidor (${response.statusCode}): Respuesta inválida. '
-            'Verifica que el backend esté funcionando correctamente.',
-          );
-        }
-      }
-
-      // Verificar código de estado después de parsear JSON
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        final errorMessage = data is Map
-            ? (data['message'] ?? data['error'] ?? 'Error desconocido')
-            : 'Error del servidor';
-
-        throw Exception('Error al actualizar la receta: $errorMessage');
-      }
-
-      return data is Map ? Map<String, dynamic>.from(data) : {'success': true};
-    } on http.ClientException {
-      throw Exception(
-        'No se pudo conectar al servidor. Verifica que el backend esté ejecutándose en http://localhost:3000',
-      );
+      print('✅ [UPDATE_RECETA] Receta actualizada exitosamente');
+      return data;
     } catch (e) {
+      print('❌ [UPDATE_RECETA] Excepción: $e');
       rethrow;
     }
   }
 
   /// Endpoint: DELETE /recetas/:id
   Future<void> eliminarReceta(String recetaId) async {
+    print('🗑️ [DELETE_RECETA] Eliminando receta ID: $recetaId');
     try {
+      final headers = await _getHeaders();
+      print('🗑️ [DELETE_RECETA] Headers: $headers');
+
       final response = await http.delete(
         Uri.parse('$_baseUrl/recetas/$recetaId'),
-        headers: await _getHeaders(),
+        headers: headers,
       );
 
+      print('🗑️ [DELETE_RECETA] Status: ${response.statusCode}');
+      print('🗑️ [DELETE_RECETA] Response: ${response.body}');
+
       if (response.statusCode != 204 && response.statusCode != 200) {
-        final data = jsonDecode(response.body);
-        throw Exception(data['message'] ?? 'No se pudo eliminar la receta');
+        print('❌ [DELETE_RECETA] Error: ${response.statusCode}');
+        throw Exception(
+          'No se pudo eliminar la receta: ${response.statusCode}',
+        );
       }
+
+      print('✅ [DELETE_RECETA] Receta eliminada exitosamente');
     } catch (e) {
+      print('❌ [DELETE_RECETA] Excepción: $e');
       rethrow;
     }
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
@@ -35,8 +34,8 @@ class CustomButton extends StatelessWidget {
               )
             : Text(text),
         style: OutlinedButton.styleFrom(
-          foregroundColor: textColor ?? AppColors.primary,
-          side: BorderSide(color: textColor ?? AppColors.primary),
+          foregroundColor: textColor ?? Colors.blue[600],
+          side: BorderSide(color: textColor ?? Colors.blue[600]!),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -60,7 +59,7 @@ class CustomButton extends StatelessWidget {
               )
             : Text(text),
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppColors.primary,
+          backgroundColor: backgroundColor ?? Colors.blue[600],
           foregroundColor: Colors.white,
         ),
       );
@@ -69,7 +68,7 @@ class CustomButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor ?? AppColors.primary,
+        backgroundColor: backgroundColor ?? Colors.blue[600],
         foregroundColor: textColor ?? Colors.white,
       ),
       child: isLoading

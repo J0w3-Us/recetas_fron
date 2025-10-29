@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 import '../../services/api_service.dart';
-import 'edit_recipe_screen.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final String recetaId;
@@ -15,8 +13,6 @@ class RecipeDetailScreen extends StatefulWidget {
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   final ApiService _apiService = ApiService();
   late Future<Map<String, dynamic>> _recetaFuture;
-  String? _currentUserId;
-
   // Helpers to read API fields that may have different names
   String _getStringFieldFrom(
     Map<String, dynamic> receta,
@@ -41,37 +37,74 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return <dynamic>[];
   }
 
-  String _getRecipeId(Map<String, dynamic> receta) {
-    return (receta['id'] ??
-                receta['_id'] ??
-                receta['recetaId'] ??
-                receta['receta_id'])
-            ?.toString() ??
-        '';
-  }
-
-  String _getUserId(Map<String, dynamic> receta) {
-    return (receta['userId'] ?? receta['user_id'] ?? receta['usuario_id'])
-            ?.toString() ??
-        '';
-  }
-
   @override
   void initState() {
     super.initState();
     _recetaFuture = _apiService.obtenerRecetaPorId(widget.recetaId);
-    _loadCurrentUser();
-  }
-
-  Future<void> _loadCurrentUser() async {
-    _currentUserId = await _apiService.getCurrentUserId();
-    setState(() {}); // Actualiza la UI cuando el ID del usuario está disponible
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.orange[600],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'RecetasDeliciosas',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () {}, child: const Text('Inicio')),
+          TextButton(onPressed: () {}, child: const Text('Categorías')),
+          TextButton(onPressed: () {}, child: const Text('Populares')),
+          TextButton(onPressed: () {}, child: const Text('Sobre Nosotros')),
+          const SizedBox(width: 20),
+          Container(
+            width: 200,
+            height: 36,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(width: 12),
+                Icon(Icons.search, color: Colors.grey, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar recetas...',
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+        ],
+      ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _recetaFuture,
         builder: (context, snapshot) {
@@ -98,149 +131,199 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           }
 
           final receta = snapshot.data!;
-          // Use class-level helpers (_getStringFieldFrom / _getListFieldFrom) below
-          return CustomScrollView(
-            slivers: [
-              // Header con imagen
-              SliverAppBar(
-                expandedHeight: 300.0,
-                floating: false,
-                pinned: true,
-                backgroundColor: AppColors.primary,
-                actions: _buildAppBarActions(receta),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.network(
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // Imagen principal de la receta
+                Container(
+                  width: double.infinity,
+                  height: 400,
+                  margin: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    image: DecorationImage(
+                      image: NetworkImage(
                         receta['imagen_url'] ??
-                            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.image_not_supported,
-                              size: 64,
-                            ),
-                          );
-                        },
+                            'https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=600',
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.7),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
 
-              // Contenido de la receta
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
+                // Contenido de la receta
+                Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 80,
+                    vertical: 40,
+                  ),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Título
-                      Text(
-                        _getStringFieldFrom(receta, [
-                          'titulo',
-                          'title',
-                          'name',
-                          'nombre',
-                        ], 'Sin título'),
-                        style: Theme.of(context).textTheme.displayMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
+                      // Columna izquierda - Título y botones
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Título principal
+                            Text(
+                              _getStringFieldFrom(receta, [
+                                'titulo',
+                                'title',
+                                'name',
+                                'nombre',
+                              ], 'Lasaña Clásica a la Boloñesa'),
+                              style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                              ),
+                            ),
 
-                      // Descripción
-                      Text(
-                        _getStringFieldFrom(receta, [
-                          'descripcion',
-                          'description',
-                        ], 'Sin descripción'),
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.grey[600],
+                            const SizedBox(height: 20),
+
+                            // Botones de acción
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Colors.orange[300]!,
+                                    ),
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.star_border,
+                                        color: Colors.orange[600],
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Imprimir',
+                                        style: TextStyle(
+                                          color: Colors.orange[600],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(width: 16),
+
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[600],
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.favorite_border,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Guardar',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 40),
+
+                            // Información de tiempo, porciones y dificultad
+                            Row(
+                              children: [
+                                _buildInfoItem(
+                                  Icons.access_time,
+                                  '90 min',
+                                  'Tiempo Total',
+                                ),
+                                const SizedBox(width: 40),
+                                _buildInfoItem(
+                                  Icons.people,
+                                  '6 personas',
+                                  'Porciones',
+                                ),
+                                const SizedBox(width: 40),
+                                _buildInfoItem(
+                                  Icons.signal_cellular_alt,
+                                  'Intermedia',
+                                  'Dificultad',
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 40),
+
+                            // Sección de Ingredientes
+                            _buildIngredientsSection(receta),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 32),
 
-                      // Información adicional
-                      Row(
-                        children: [
-                          _buildInfoCard(Icons.access_time, 'Tiempo', '30 min'),
-                          const SizedBox(width: 16),
-                          _buildInfoCard(Icons.people, 'Porciones', '4'),
-                          const SizedBox(width: 16),
-                          _buildInfoCard(Icons.star, 'Dificultad', 'Medio'),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
+                      const SizedBox(width: 80),
 
-                      // Contenido de la receta (ingredientes y pasos)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Ingredientes
-                          Expanded(
-                            flex: 1,
-                            child: _buildIngredientsSection(receta),
-                          ),
-                          const SizedBox(width: 32),
-
-                          // Pasos
-                          Expanded(flex: 2, child: _buildStepsSection(receta)),
-                        ],
-                      ),
+                      // Columna derecha - Preparación
+                      Expanded(flex: 2, child: _buildStepsSection(receta)),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildInfoCard(IconData icon, String label, String value) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundSecondary,
-          borderRadius: BorderRadius.circular(12),
+  Widget _buildInfoItem(IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.orange[50],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.orange[600], size: 24),
         ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppColors.primary),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+      ],
     );
   }
 
@@ -250,17 +333,35 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       'ingredients',
     ]);
 
+    // Si no hay ingredientes, usar una lista de ejemplo
+    final ingredientesList = ingredientes.isEmpty
+        ? [
+            '500g de carne picada (mitad cerdo, mitad ternera)',
+            '12 láminas de lasaña',
+            '1 cebolla grande, picada',
+            '2 dientes de ajo, picados',
+            '800g de tomate triturado',
+            '1L de leche entera',
+            '60g de mantequilla',
+            '60g de harina',
+            '200g de queso Parmesano rallado',
+            'Aceite de oliva, sal, pimienta y nuez moscada',
+          ]
+        : ingredientes;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Ingredientes',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
         ),
-        const SizedBox(height: 16),
-        ...ingredientes.map<Widget>((ingrediente) {
+        const SizedBox(height: 20),
+        ...ingredientesList.map<Widget>((ingrediente) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Row(
@@ -270,15 +371,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   width: 6,
                   height: 6,
                   margin: const EdgeInsets.only(top: 8, right: 12),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[600],
                     shape: BoxShape.circle,
                   ),
                 ),
                 Expanded(
                   child: Text(
                     ingrediente.toString(),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ],
@@ -292,22 +397,35 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Widget _buildStepsSection(Map<String, dynamic> receta) {
     final pasos = _getListFieldFrom(receta, ['pasos', 'preparacion', 'steps']);
 
+    // Si no hay pasos, usar una lista de ejemplo
+    final pasosList = pasos.isEmpty
+        ? [
+            'Salsa Boloñesa: Sofríe la cebolla y el ajo en aceite de oliva. Añade la carne picada y dorar. Incorpora el tomate triturado, sal, pimienta y cocinar a fuego lento durante 45 minutos.',
+            'Salsa Bechamel: Derretir la mantequilla, añadir la harina y cocinar por 1 minuto. Verter la leche poco a poco, sin dejar de remover, hasta que espese. Sazonar con sal, pimienta y nuez moscada.',
+            'Precalentar el horno a 180°C (350°F). Cocer las láminas de lasaña según las instrucciones del paquete si no son precocidas.',
+            'Montaje: En una fuente para horno, pon una capa de bechamel, seguida de láminas de lasaña, salsa boloñesa, bechamel y queso Parmesano. Repetir hasta usar todos los ingredientes, acabando con una capa de bechamel y abundante queso.',
+            'Horneado: Hornear durante 30-40 minutos o hasta que la superficie esté dorada y burbujeante. Dejar reposar 10 minutos antes de servir. ¡Buen provecho!',
+          ]
+        : pasos;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Preparación',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
         ),
-        const SizedBox(height: 16),
-        ...pasos.asMap().entries.map<Widget>((entry) {
+        const SizedBox(height: 20),
+        ...pasosList.asMap().entries.map<Widget>((entry) {
           final index = entry.key;
           final paso = entry.value;
 
           return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.only(bottom: 24),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -315,8 +433,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   width: 32,
                   height: 32,
                   margin: const EdgeInsets.only(right: 16),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[600],
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -333,7 +451,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 Expanded(
                   child: Text(
                     paso.toString(),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.black87,
+                      height: 1.6,
+                    ),
                   ),
                 ),
               ],
@@ -342,149 +464,5 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         }),
       ],
     );
-  }
-
-  List<Widget> _buildAppBarActions(Map<String, dynamic> receta) {
-    if (_currentUserId == null) return [];
-
-    final recetaUserId = _getUserId(receta);
-
-    // Solo mostrar botones si el usuario actual es el dueño de la receta
-    if (recetaUserId == _currentUserId) {
-      return [
-        IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () => _navigateToEditRecipe(receta),
-          tooltip: 'Editar receta',
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () =>
-              _mostrarDialogoEliminar(context, _getRecipeId(receta)),
-          tooltip: 'Eliminar receta',
-        ),
-      ];
-    }
-
-    return [];
-  }
-
-  void _navigateToEditRecipe(Map<String, dynamic> receta) async {
-    print('🔧 [RECIPE_DETAIL] Navegando a pantalla de edición');
-    print('🔧 [RECIPE_DETAIL] Datos de receta: ${receta.keys.toList()}');
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => EditRecipeScreen(receta: receta)),
-    );
-
-    print('🔧 [RECIPE_DETAIL] Resultado de edición: $result');
-
-    // Si se actualizó la receta, recargar los datos
-    if (result == true) {
-      print('🔧 [RECIPE_DETAIL] Receta actualizada, recargando datos...');
-      setState(() {
-        _recetaFuture = _apiService.obtenerRecetaPorId(widget.recetaId);
-      });
-    }
-  }
-
-  void _mostrarDialogoEliminar(BuildContext context, String recetaId) {
-    print('🗑️ [RECIPE_DETAIL] Iniciando proceso de eliminación');
-    print('🗑️ [RECIPE_DETAIL] ID de receta: $recetaId');
-
-    if (recetaId.trim().isEmpty) {
-      print('❌ [RECIPE_DETAIL] ID de receta vacío o inválido');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('ID de receta inválido')));
-      return;
-    }
-
-    print('🗑️ [RECIPE_DETAIL] Mostrando diálogo de confirmación');
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          title: const Text('Confirmar Eliminación'),
-          content: const Text(
-            '¿Estás seguro de que quieres eliminar esta receta? Esta acción no se puede deshacer.',
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancelar'),
-              onPressed: () => Navigator.of(ctx).pop(),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Eliminar'),
-              onPressed: () async {
-                print('🗑️ [RECIPE_DETAIL] Usuario confirmó eliminación');
-                Navigator.of(ctx).pop(); // Cerrar diálogo
-                await _eliminarReceta(recetaId);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _eliminarReceta(String recetaId) async {
-    try {
-      print(
-        '🗑️ [RECIPE_DETAIL] Iniciando proceso de eliminación para receta: $recetaId',
-      );
-
-      // Mostrar indicador de carga
-      print('🗑️ [RECIPE_DETAIL] Mostrando indicador de carga');
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Eliminando receta...'),
-            ],
-          ),
-        ),
-      );
-
-      print('🗑️ [RECIPE_DETAIL] Llamando a API para eliminar receta');
-      await _apiService.eliminarReceta(recetaId);
-
-      if (mounted) {
-        print(
-          '🗑️ [RECIPE_DETAIL] Eliminación exitosa, cerrando diálogos y navegando',
-        );
-        Navigator.of(context).pop(); // Cerrar indicador de carga
-        Navigator.of(context).pop(); // Volver a la pantalla anterior
-
-        print('✅ [RECIPE_DETAIL] Mostrando mensaje de éxito');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Receta eliminada con éxito'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ [RECIPE_DETAIL] Error al eliminar receta: $e');
-      if (mounted) {
-        print(
-          '🗑️ [RECIPE_DETAIL] Cerrando indicador de carga y mostrando error',
-        );
-        Navigator.of(context).pop(); // Cerrar indicador de carga
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al eliminar la receta: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 }

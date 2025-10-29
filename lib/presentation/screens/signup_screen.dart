@@ -28,21 +28,11 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleSignup() async {
-    print('📝 [SIGNUP] Iniciando proceso de registro');
-    print('📝 [SIGNUP] Validando formulario...');
-
     if (_formKey.currentState!.validate()) {
-      print('✅ [SIGNUP] Formulario válido');
       setState(() => _isLoading = true);
 
       try {
-        print('📝 [SIGNUP] Creando instancia de ApiService');
         final apiService = ApiService();
-
-        print('📝 [SIGNUP] Llamando a registrarUsuario con:');
-        print('   - Nombre: ${_nameController.text}');
-        print('   - Email: ${_emailController.text}');
-        print('   - Contraseña: [HIDDEN]');
 
         await apiService.registrarUsuario(
           _nameController.text,
@@ -51,7 +41,6 @@ class _SignupScreenState extends State<SignupScreen> {
         );
 
         if (mounted) {
-          print('✅ [SIGNUP] Registro exitoso, mostrando mensaje y navegando');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
@@ -63,7 +52,6 @@ class _SignupScreenState extends State<SignupScreen> {
           Navigator.pop(context); // Volver al Login
         }
       } catch (e) {
-        print('❌ [SIGNUP] Error durante el registro: $e');
         if (mounted) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -204,8 +192,8 @@ class _SignupScreenState extends State<SignupScreen> {
                             if (value == null || value.isEmpty) {
                               return 'Por favor ingresa una contraseña';
                             }
-                            if (value.length < 6) {
-                              return 'La contraseña debe tener al menos 6 caracteres';
+                            if (value.length < 8) {
+                              return 'La contraseña debe tener al menos 8 caracteres';
                             }
                             return null;
                           },
