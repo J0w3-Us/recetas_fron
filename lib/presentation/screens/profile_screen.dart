@@ -19,14 +19,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserName();
   }
 
-  Future<void> _loadUserName() async {
-    print('👤 [PROFILE] Cargando nombre de usuario');
+  void _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
-    final userName = prefs.getString('user_name');
-    print('👤 [PROFILE] Nombre de usuario: $userName');
-    setState(() {
-      _userName = userName;
-    });
+    final userName = prefs.getString('user_name') ?? 'Usuario';
+    if (mounted) {
+      setState(() {
+        _userName = userName;
+      });
+    }
   }
 
   String _getRecipeString(
@@ -215,7 +215,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     future: ApiService().obtenerMisRecetas(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        print('👤 [PROFILE] Cargando mis recetas...');
                         return const Center(
                           child: Padding(
                             padding: EdgeInsets.all(40),
@@ -225,9 +224,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
 
                       if (snapshot.hasError) {
-                        print(
-                          '❌ [PROFILE] Error cargando recetas: ${snapshot.error}',
-                        );
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.all(40),
@@ -239,7 +235,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
 
                       final recetas = snapshot.data ?? [];
-                      print('👤 [PROFILE] ${recetas.length} recetas cargadas');
 
                       if (recetas.isEmpty) {
                         return const Center(
@@ -360,7 +355,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToRecipeDetail(String recetaId) {
-    print('👤 [PROFILE] Navegando a receta ID: $recetaId');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -370,15 +364,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _handleLogout() async {
-    print('🚪 [PROFILE] Iniciando logout');
     try {
       await ApiService().cerrarSesion();
-      print('✅ [PROFILE] Logout exitoso');
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
-      print('❌ [PROFILE] Error en logout: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

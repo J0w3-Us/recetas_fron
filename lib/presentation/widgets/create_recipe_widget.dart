@@ -1,9 +1,6 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../widgets/custom_button.dart';
-import '../../utils/image_optimizer.dart';
 
 class CreateRecipeWidget extends StatefulWidget {
   const CreateRecipeWidget({super.key});
@@ -23,7 +20,6 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
   final List<TextEditingController> _stepControllers = [
     TextEditingController(),
   ];
-  Uint8List? _compressedImageData;
   bool _isLoading = false;
 
   @override
@@ -66,30 +62,16 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
   }
 
   Future<void> _handleSubmit() async {
-    print('📝 [CREATE_WIDGET] Iniciando envío de formulario');
-
     if (!_formKey.currentState!.validate()) {
-      print('❌ [CREATE_WIDGET] Formulario no es válido');
       return;
     }
 
-    // Validar que haya imagen
-    if (_compressedImageData == null) {
-      print('⚠️ [CREATE_WIDGET] Falta imagen');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, sube una imagen de la receta'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
 
-    print('✅ [CREATE_WIDGET] Formulario válido, iniciando creación');
+
     setState(() => _isLoading = true);
 
     try {
-      print('📝 [CREATE_RECIPE] Preparando datos de la receta...');
+      // Preparar datos de la receta
 
       // Preparar ingredientes (filtrar vacíos)
       final ingredientes = _ingredientControllers
@@ -112,23 +94,15 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
         throw Exception('Debes agregar al menos un paso');
       }
 
-      print('📝 [CREATE_RECIPE] Ingredientes: $ingredientes');
-      print('📝 [CREATE_RECIPE] Pasos: $pasos');
-
-      // Para esta demo, usamos una URL de imagen placeholder
-      // En una implementación real, aquí subirías _compressedImageData a Supabase Storage
+      // Crear receta sin imagen por ahora, ya que la base de datos no tiene la columna image_url
       final datosReceta = {
-        'titulo': _titleController.text.trim(),
-        'descripcion': _descriptionController.text.trim(),
-        'ingredientes': ingredientes,
-        'pasos': pasos,
-        'imagen_url':
-            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600', // Placeholder
+        'name': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'ingredients': ingredientes,
+        'steps': pasos,
       };
 
-      print('📝 [CREATE_WIDGET] Datos finales a enviar: $datosReceta');
-      final resultado = await ApiService().crearReceta(datosReceta);
-      print('✅ [CREATE_WIDGET] Receta creada, resultado: $resultado');
+      await ApiService().crearReceta(datosReceta);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -140,7 +114,6 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
         Navigator.pop(context);
       }
     } catch (e) {
-      print('❌ [CREATE_WIDGET] Error al crear receta: $e');
       if (mounted) {
         setState(() => _isLoading = false);
 
@@ -230,6 +203,15 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
                     decoration: const InputDecoration(
                       hintText: 'Ej: Tarta de Manzana Clásica',
                     ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'El título es obligatorio';
+                      }
+                      if (value.trim().length < 3) {
+                        return 'El título debe tener al menos 3 caracteres';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 24),
 
@@ -245,56 +227,13 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
                     decoration: const InputDecoration(
                       hintText: 'Describe brevemente tu receta...',
                     ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'La descripción es obligatoria';
+                      }
+                      return null;
+                    },
                   ),
-                  const SizedBox(height: 24),
-
-                  // Subir Foto
-                  Text(
-                    'Subir Foto',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildPhotoUpload(),
-                  const SizedBox(height: 8),
-
-                  // Botón explícito para subir/cambiar foto (opción adicional)
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () async {
-                        final data = await pickAndCompressImage();
-                        if (data != null) {
-                          setState(() {
-                            _compressedImageData = data;
-                          });
-                        }
-                      },
-                      icon: const Icon(Icons.camera_alt_outlined),
-                      label: Text(
-                        _compressedImageData == null
-                            ? 'Subir Foto'
-                            : 'Cambiar Foto',
-                      ),
-                    ),
-                  ),
-
-                  if (_compressedImageData != null)
-                    Center(
-                      child: Column(
-                        children: [
-                          Image.memory(_compressedImageData!, height: 180),
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _compressedImageData = null;
-                              });
-                            },
-                            icon: const Icon(Icons.delete_outline),
-                            label: const Text('Eliminar foto'),
-                          ),
-                        ],
-                      ),
-                    ),
                   const SizedBox(height: 32),
 
                   // Ingredientes
@@ -346,68 +285,7 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
     );
   }
 
-  Widget _buildPhotoUpload() {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[300]!,
-          width: 2,
-          style: BorderStyle.solid,
-        ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          // Abrir selector y comprimir la imagen
-          final data = await pickAndCompressImage();
-          if (data != null) {
-            setState(() {
-              _compressedImageData = data;
-            });
-          }
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.add_photo_alternate_outlined,
-                size: 32,
-                color: Colors.blue[600],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Sube una imagen',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.blue[600],
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'o arrastra y suelta aquí',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'PNG, JPG, GIF hasta 10MB',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   List<Widget> _buildIngredientFields() {
     return List.generate(_ingredientControllers.length, (index) {
@@ -421,6 +299,12 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
                 decoration: const InputDecoration(
                   hintText: 'Ej: 1 taza de harina',
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Ingrese un ingrediente';
+                  }
+                  return null;
+                },
               ),
             ),
             if (_ingredientControllers.length > 1) ...[
@@ -470,6 +354,12 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
                 decoration: const InputDecoration(
                   hintText: 'Describe este paso...',
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Describe este paso';
+                  }
+                  return null;
+                },
               ),
             ),
             if (_stepControllers.length > 1) ...[

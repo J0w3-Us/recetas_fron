@@ -4,6 +4,8 @@ import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/signup_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/profile_screen.dart';
+import 'presentation/screens/recipe_detail_screen.dart';
+import 'screens/create_recipe_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,6 +27,16 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignupScreen(),
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/create-recipe': (context) => const CreateRecipeScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name?.startsWith('/recipe-detail/') == true) {
+          final recetaId = settings.name!.substring('/recipe-detail/'.length);
+          return MaterialPageRoute(
+            builder: (context) => RecipeDetailScreen(recetaId: recetaId),
+          );
+        }
+        return null;
       },
     );
   }

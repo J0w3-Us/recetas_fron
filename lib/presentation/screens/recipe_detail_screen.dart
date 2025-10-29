@@ -56,10 +56,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: Colors.orange[600],
+                color: Colors.blue[600],
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 16),
+              child: const Icon(
+                Icons.restaurant_menu,
+                color: Colors.white,
+                size: 14,
+              ),
             ),
             const SizedBox(width: 8),
             const Text(
@@ -73,10 +77,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () {}, child: const Text('Inicio')),
-          TextButton(onPressed: () {}, child: const Text('Categorías')),
-          TextButton(onPressed: () {}, child: const Text('Populares')),
-          TextButton(onPressed: () {}, child: const Text('Sobre Nosotros')),
+          TextButton(
+            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+            child: const Text('Inicio'),
+          ),
           const SizedBox(width: 20),
           Container(
             width: 200,
@@ -185,73 +189,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             ),
 
                             const SizedBox(height: 20),
-
-                            // Botones de acción
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.orange[300]!,
-                                    ),
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.star_border,
-                                        color: Colors.orange[600],
-                                        size: 18,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Imprimir',
-                                        style: TextStyle(
-                                          color: Colors.orange[600],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                const SizedBox(width: 16),
-
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue[600],
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.favorite_border,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'Guardar',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
 
                             const SizedBox(height: 40),
 
