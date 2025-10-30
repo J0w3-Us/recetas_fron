@@ -12,11 +12,26 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _userName;
+  Future<List<dynamic>>? _recetasFuture;
 
   @override
   void initState() {
     super.initState();
     _loadUserName();
+    _loadRecetas();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recargar recetas cada vez que se navega a esta pantalla
+    _loadRecetas();
+  }
+
+  void _loadRecetas() {
+    setState(() {
+      _recetasFuture = ApiService().obtenerMisRecetas();
+    });
   }
 
   void _loadUserName() async {
@@ -162,8 +177,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // Botón Crear Nueva Receta
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/create-recipe');
+                    onPressed: () async {
+                      final result = await Navigator.pushNamed(
+                        context,
+                        '/create-recipe',
+                      );
+                      if (result == true) {
+                        // Se creó una nueva receta, refrescar la lista
+                        _loadRecetas();
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[600],
@@ -212,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // Grid de recetas
                   FutureBuilder<List<dynamic>>(
-                    future: ApiService().obtenerMisRecetas(),
+                    future: _recetasFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(

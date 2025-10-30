@@ -66,8 +66,6 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
       return;
     }
 
-
-
     setState(() => _isLoading = true);
 
     try {
@@ -111,7 +109,8 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
             backgroundColor: Colors.green[600],
           ),
         );
-        Navigator.pop(context);
+        // Regresar al perfil indicando que se creó una receta
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -284,8 +283,6 @@ class _CreateRecipeWidgetState extends State<CreateRecipeWidget> {
       ),
     );
   }
-
-
 
   List<Widget> _buildIngredientFields() {
     return List.generate(_ingredientControllers.length, (index) {
